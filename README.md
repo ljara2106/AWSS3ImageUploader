@@ -49,14 +49,3 @@ Make sure to keep your configuration secure and never share your AWS credentials
 
 4. If the image meets the specified criteria (file type and size), it will be uploaded to the specified S3 bucket path. Otherwise, you will receive an error message indicating the issue.
 
-## Contribution
-
-Contributions to this project are welcome! If you have any suggestions, bug reports, or feature requests, please [open an issue](https://github.com/ljara2106/AWSS3ImageUploader/issues) or submit a pull request.
-
-## Author
-
-This AWS S3 Bucket Image Uploader Tool is maintained by [ljara2106](https://github.com/ljara2106).
-
----
-
-Thank you for using the AWS S3 Bucket Image Uploader Tool! We hope it simplifies your image upload process to Amazon S3 and helps you manage your resources effectively. If you have any questions or need assistance, please don't hesitate to reach out.
