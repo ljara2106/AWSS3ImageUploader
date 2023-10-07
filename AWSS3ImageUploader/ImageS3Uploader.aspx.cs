@@ -23,141 +23,151 @@ namespace s3ImageUploader
         {
             if (ImageFileUpload.HasFile)
             {
-                // Check file size (2MB limit)
-                int maxFileSize = 2 * 1024 * 1024; // 2MB
-                if (ImageFileUpload.PostedFile.ContentLength > maxFileSize)
+                string fileExtension = Path.GetExtension(ImageFileUpload.FileName).ToLower();
+                // Check if the file extension is one of the allowed types
+                if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
                 {
-                    // Resize the image
-                    using (Stream originalStream = ImageFileUpload.PostedFile.InputStream)
+                    // Check file size (2MB limit)
+                    int maxFileSize = 2 * 1024 * 1024; // 2MB
+                    if (ImageFileUpload.PostedFile.ContentLength > maxFileSize)
                     {
-                        using (MemoryStream memoryStream = new MemoryStream())
+                        // Resize the image
+                        using (Stream originalStream = ImageFileUpload.PostedFile.InputStream)
                         {
-                            double scaleFactor = Math.Sqrt((double)maxFileSize / ImageFileUpload.PostedFile.ContentLength);
-                            int newWidth = (int)(new Bitmap(originalStream).Width * scaleFactor);
-                            int newHeight = (int)(new Bitmap(originalStream).Height * scaleFactor);
-
-                            using (Image originalImage = Image.FromStream(originalStream))
-                            using (Bitmap resizedImage = new Bitmap(newWidth, newHeight))
-                            using (Graphics graphics = Graphics.FromImage(resizedImage))
+                            using (MemoryStream memoryStream = new MemoryStream())
                             {
-                                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                                graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                                graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
+                                double scaleFactor = Math.Sqrt((double)maxFileSize / ImageFileUpload.PostedFile.ContentLength);
+                                int newWidth = (int)(new Bitmap(originalStream).Width * scaleFactor);
+                                int newHeight = (int)(new Bitmap(originalStream).Height * scaleFactor);
 
-                                // Save the resized image to the memory stream
-                                resizedImage.Save(memoryStream, ImageFormat.Jpeg);
-                                memoryStream.Position = 0;
-
-                                // Upload the resized image
-                                string accessKey = WebConfigurationManager.AppSettings["AWS.AccessKey"];
-                                string secretKey = WebConfigurationManager.AppSettings["AWS.SecretKey"];
-                                string region = WebConfigurationManager.AppSettings["AWS.Region"];
-                                string bucketName = WebConfigurationManager.AppSettings["AWS.BucketName"];
-                                string folderPath = WebConfigurationManager.AppSettings["AWS.FolderPath"];
-
-                                try
+                                using (Image originalImage = Image.FromStream(originalStream))
+                                using (Bitmap resizedImage = new Bitmap(newWidth, newHeight))
+                                using (Graphics graphics = Graphics.FromImage(resizedImage))
                                 {
-                                    using (IAmazonS3 client = new AmazonS3Client(accessKey, secretKey, RegionEndpoint.GetBySystemName(region)))
+                                    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                    graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                                    graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                                    graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
+
+                                    // Save the resized image to the memory stream
+                                    resizedImage.Save(memoryStream, ImageFormat.Jpeg);
+                                    memoryStream.Position = 0;
+
+                                    // Upload the resized image
+                                    string accessKey = WebConfigurationManager.AppSettings["AWS.AccessKey"];
+                                    string secretKey = WebConfigurationManager.AppSettings["AWS.SecretKey"];
+                                    string region = WebConfigurationManager.AppSettings["AWS.Region"];
+                                    string bucketName = WebConfigurationManager.AppSettings["AWS.BucketName"];
+                                    string folderPath = WebConfigurationManager.AppSettings["AWS.FolderPath"];
+
+                                    try
                                     {
-                                        string fileName = Path.GetFileName(ImageFileUpload.PostedFile.FileName);
-                                        string objectKey = folderPath + fileName;
-
-                                        TransferUtility fileTransferUtility = new TransferUtility(client);
-
-                                        // Upload the resized image
-                                        fileTransferUtility.Upload(memoryStream, bucketName, objectKey);
-
-                                        // Set public-read ACL for the uploaded object
-                                        client.PutACL(new PutACLRequest
+                                        using (IAmazonS3 client = new AmazonS3Client(accessKey, secretKey, RegionEndpoint.GetBySystemName(region)))
                                         {
-                                            BucketName = bucketName,
-                                            Key = objectKey,
-                                            CannedACL = S3CannedACL.PublicRead
-                                        });
+                                            string fileName = Path.GetFileName(ImageFileUpload.PostedFile.FileName);
+                                            string objectKey = folderPath + fileName;
 
-                                        string fileUrl = $"https://{bucketName}.s3.amazonaws.com/{objectKey}";
+                                            TransferUtility fileTransferUtility = new TransferUtility(client);
 
-                                        // Get the user's public IP address
-                                        string userIpAddress = GetUserIPAddress();
+                                            // Upload the resized image
+                                            fileTransferUtility.Upload(memoryStream, bucketName, objectKey);
 
-                                        // Log the date, public IP address, file name, and extension to a log file
-                                        string logFolderPath = Server.MapPath("~/Logs/");
-                                        if (!Directory.Exists(logFolderPath))
-                                        {
-                                            Directory.CreateDirectory(logFolderPath);
+                                            // Set public-read ACL for the uploaded object
+                                            client.PutACL(new PutACLRequest
+                                            {
+                                                BucketName = bucketName,
+                                                Key = objectKey,
+                                                CannedACL = S3CannedACL.PublicRead
+                                            });
+
+                                            string fileUrl = $"https://{bucketName}.s3.amazonaws.com/{objectKey}";
+
+                                            // Get the user's public IP address
+                                            string userIpAddress = GetUserIPAddress();
+
+                                            // Log the date, public IP address, file name, and extension to a log file
+                                            string logFolderPath = Server.MapPath("~/Logs/");
+                                            if (!Directory.Exists(logFolderPath))
+                                            {
+                                                Directory.CreateDirectory(logFolderPath);
+                                            }
+                                            string logFilePath = Path.Combine(logFolderPath, "upload_log.txt");
+
+                                            File.AppendAllText(logFilePath, $"{DateTime.Now}: Public IP Address - {userIpAddress}, Uploaded File - {fileName}{Environment.NewLine}");
+
+                                            // Clickable link to the file URL
+                                            ResultLabel.Text = $"File uploaded successfully. <br> <br> URL: <a href=\"{fileUrl}\" target=\"_blank\">{fileUrl}</a>";
                                         }
-                                        string logFilePath = Path.Combine(logFolderPath, "upload_log.txt");
-
-                                        File.AppendAllText(logFilePath, $"{DateTime.Now}: Public IP Address - {userIpAddress}, Uploaded File - {fileName}{Environment.NewLine}");
-
-                                        // clickable link to the file URL
-                                        ResultLabel.Text = $"File uploaded successfully. <br> <br> URL: <a href=\"{fileUrl}\" target=\"_blank\">{fileUrl}</a>";
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        ResultLabel.Text = $"Error uploading file: {ex.Message}";
                                     }
                                 }
-                                catch (Exception ex)
-                                {
-                                    ResultLabel.Text = $"Error uploading file: {ex.Message}";
-                                }
                             }
+                        }
+                    }
+                    else
+                    {
+                        // Upload the original image without resizing
+                        string accessKey = WebConfigurationManager.AppSettings["AWS.AccessKey"];
+                        string secretKey = WebConfigurationManager.AppSettings["AWS.SecretKey"];
+                        string region = WebConfigurationManager.AppSettings["AWS.Region"];
+                        string bucketName = WebConfigurationManager.AppSettings["AWS.BucketName"];
+                        string folderPath = WebConfigurationManager.AppSettings["AWS.FolderPath"];
+
+                        try
+                        {
+                            using (IAmazonS3 client = new AmazonS3Client(accessKey, secretKey, RegionEndpoint.GetBySystemName(region)))
+                            {
+                                string fileName = Path.GetFileName(ImageFileUpload.PostedFile.FileName);
+                                string objectKey = folderPath + fileName;
+
+                                TransferUtility fileTransferUtility = new TransferUtility(client);
+
+                                // Upload the original image
+                                using (Stream stream = ImageFileUpload.PostedFile.InputStream)
+                                {
+                                    fileTransferUtility.Upload(stream, bucketName, objectKey);
+                                }
+
+                                // Set public-read ACL for the uploaded object
+                                client.PutACL(new PutACLRequest
+                                {
+                                    BucketName = bucketName,
+                                    Key = objectKey,
+                                    CannedACL = S3CannedACL.PublicRead
+                                });
+
+                                string fileUrl = $"https://{bucketName}.s3.amazonaws.com/{objectKey}";
+
+                                // Get the user's public IP address
+                                string userIpAddress = GetUserIPAddress();
+
+                                // Log the date, public IP address, file name, and extension to a log file
+                                string logFolderPath = Server.MapPath("~/Logs/");
+                                if (!Directory.Exists(logFolderPath))
+                                {
+                                    Directory.CreateDirectory(logFolderPath);
+                                }
+                                string logFilePath = Path.Combine(logFolderPath, "upload_log.txt");
+
+                                File.AppendAllText(logFilePath, $"{DateTime.Now}: Public IP Address - {userIpAddress}, Uploaded File - {fileName}{Environment.NewLine}");
+
+                                // Clickable link to the file URL
+                                ResultLabel.Text = $"File uploaded successfully. <br> <br> URL: <a href=\"{fileUrl}\" target=\"_blank\">{fileUrl}</a>";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            ResultLabel.Text = $"Error uploading file: {ex.Message}";
                         }
                     }
                 }
                 else
                 {
-                    // Upload the original image without resizing
-                    string accessKey = WebConfigurationManager.AppSettings["AWS.AccessKey"];
-                    string secretKey = WebConfigurationManager.AppSettings["AWS.SecretKey"];
-                    string region = WebConfigurationManager.AppSettings["AWS.Region"];
-                    string bucketName = WebConfigurationManager.AppSettings["AWS.BucketName"];
-                    string folderPath = WebConfigurationManager.AppSettings["AWS.FolderPath"];
-
-                    try
-                    {
-                        using (IAmazonS3 client = new AmazonS3Client(accessKey, secretKey, RegionEndpoint.GetBySystemName(region)))
-                        {
-                            string fileName = Path.GetFileName(ImageFileUpload.PostedFile.FileName);
-                            string objectKey = folderPath + fileName;
-
-                            TransferUtility fileTransferUtility = new TransferUtility(client);
-
-                            // Upload the original image
-                            using (Stream stream = ImageFileUpload.PostedFile.InputStream)
-                            {
-                                fileTransferUtility.Upload(stream, bucketName, objectKey);
-                            }
-
-                            // Set public-read ACL for the uploaded object
-                            client.PutACL(new PutACLRequest
-                            {
-                                BucketName = bucketName,
-                                Key = objectKey,
-                                CannedACL = S3CannedACL.PublicRead
-                            });
-
-                            string fileUrl = $"https://{bucketName}.s3.amazonaws.com/{objectKey}";
-
-                            // Get the user's public IP address
-                            string userIpAddress = GetUserIPAddress();
-
-                            // Log the date, public IP address, file name, and extension to a log file
-                            string logFolderPath = Server.MapPath("~/Logs/");
-                            if (!Directory.Exists(logFolderPath))
-                            {
-                                Directory.CreateDirectory(logFolderPath);
-                            }
-                            string logFilePath = Path.Combine(logFolderPath, "upload_log.txt");
-
-                            File.AppendAllText(logFilePath, $"{DateTime.Now}: Public IP Address - {userIpAddress}, Uploaded File - {fileName}{Environment.NewLine}");
-
-                            // Clickable link to the file URL
-                            ResultLabel.Text = $"File uploaded successfully. <br> <br> URL: <a href=\"{fileUrl}\" target=\"_blank\">{fileUrl}</a>";
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        ResultLabel.Text = $"Error uploading file: {ex.Message}";
-                    }
+                    // Display an error message to the user for an invalid file type
+                    ResultLabel.Text = "Please choose a valid image file with .jpg, .jpeg, or .png extension.";
                 }
             }
             else
