@@ -91,7 +91,7 @@ namespace s3ImageUploader
 
                                         File.AppendAllText(logFilePath, $"{DateTime.Now}: Public IP Address - {userIpAddress}, Uploaded File - {fileName}{Environment.NewLine}");
 
-                                        // Create a clickable link to the file URL
+                                        // clickable link to the file URL
                                         ResultLabel.Text = $"File uploaded successfully. <br> <br> URL: <a href=\"{fileUrl}\" target=\"_blank\">{fileUrl}</a>";
                                     }
                                 }
@@ -150,7 +150,7 @@ namespace s3ImageUploader
 
                             File.AppendAllText(logFilePath, $"{DateTime.Now}: Public IP Address - {userIpAddress}, Uploaded File - {fileName}{Environment.NewLine}");
 
-                            // Create a clickable link to the file URL
+                            // Clickable link to the file URL
                             ResultLabel.Text = $"File uploaded successfully. <br> <br> URL: <a href=\"{fileUrl}\" target=\"_blank\">{fileUrl}</a>";
                         }
                     }
