@@ -39,6 +39,8 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             text-align: left;
+            overflow: auto; /* Enable scrolling if needed */
+            max-height: 150px; /* Set a maximum height for the result box */
         }
         .file-restrictions {
             font-size: 16px;
@@ -52,14 +54,15 @@
         <div class="container">
             <img class="logo" src="amazon-s3-logo.png" alt="Logo" />
             <div class="title">S3 - Image Uploader</div>
-            
+           
             <!-- File Restrictions Message -->
             <div class="file-restrictions">
                 Before uploading, please be aware of the following restrictions:
                 <br />
+                <br />
                 - Allowed file types: .jpg, .jpeg, .png
                 <br />
-                - Maximum file size: 5MB
+                - Maximum file size: 10MB (Auto-resized if larger than 2MB)
             </div>
             
             <asp:FileUpload ID="ImageFileUpload" runat="server" accept=".jpg, .png, .jpeg" />
