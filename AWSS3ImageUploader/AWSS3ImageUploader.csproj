@@ -251,6 +251,13 @@
     <Content Include="Scripts\bootstrap.bundle.js.map" />
     <Content Include="Scripts\jquery-3.7.0.slim.min.map" />
     <Content Include="Scripts\jquery-3.7.0.min.map" />
+    <Content Include="Web.sample.config" />
+    <Content Include="Web.sample.Debug.config">
+      <DependentUpon>Web.sample.config</DependentUpon>
+    </Content>
+    <Content Include="Web.sample.Release.config">
+      <DependentUpon>Web.sample.config</DependentUpon>
+    </Content>
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
