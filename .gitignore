@@ -364,3 +364,6 @@ FodyWeavers.xsd
 /AWSS3ImageUploader/Web.config
 /AWSS3ImageUploader/Web.Debug.config
 /AWSS3ImageUploader/Web.Release.config
+/AWSS3ImageUploader/Web.config
+/AWSS3ImageUploader/Web.Debug.config
+/AWSS3ImageUploader/Web.Release.config
