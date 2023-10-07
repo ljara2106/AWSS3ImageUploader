@@ -20,7 +20,7 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         .logo {
-            width: 200px;
+            width: 150px;
             height: 50px;
             margin: 0 auto 20px;
         }
